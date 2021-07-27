@@ -25,6 +25,10 @@ module.exports = {
   networks: {
     hardhat: {
       chainId: 1337 // make sure everything works
+    },
+    rinkeby: {
+      url: process.env.INFURA_ENDPOINT,
+      accounts: [`0x${process.env.RINKEBY_PRIVATE_KEY}`]
     }
   }
 
