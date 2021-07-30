@@ -1,11 +1,32 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { ethers } from 'ethers'
+import HollandToken from '../artifacts/contracts/HollandToken.sol/HollandToken.json'
+
+const hollandTokenAddress = '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512'
+const decimals = 10 ** 18
 
 const HomePage = () => {
+  const [account, setAccount] = useState(null)
+
+  useEffect(() => {
+
+    const requestAccount = async () => {
+      const accounts = await window.ethereum.request({ 'method': 'eth_requestAccounts' }) // prompt user to connect meta mask account if not connected (returs accounts array)
+      console.log('accounts', accounts)
+      setAccount(accounts[0])
+    }
+
+    requestAccount()
+
+    ethereum.on('accountsChanged', (accounts) => {
+      setAccount(accounts[0])
+    });
+  }, [])
+
   return (
     <div className='h-screen flex' >
       <div className='flex-1 flex flex-col justify-center items-center' >
-        <Balance />
+        <Balance account={account} />
         <SendForm />
       </div>
       <TransactionHistory />
@@ -13,11 +34,40 @@ const HomePage = () => {
   )
 }
 
-const Balance = () => {
+const Balance = ({ account }) => {
+  const [balance, setBalance] = useState('')
+
+  useEffect(() => {
+
+    const getBalance = async () => {
+      if (typeof window.ethereum !== undefined && account !== null) {
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const hollandToken = new ethers.Contract(hollandTokenAddress, HollandToken.abi, provider)
+        try {
+          const bal = await hollandToken.balanceOf(account)
+          console.log('balance: ', bal / decimals)
+          return bal / decimals
+        } catch (err) {
+          console.log('error: ', err)
+          return 'error'
+        }
+      }
+    }
+
+    const setData = async () => {
+      if (account !== null) {
+        const bal = await getBalance()
+        setBalance(Math.round(bal * 100) / 100)
+      }
+    }
+
+    setData()
+  }, [account])
+
   return (
     <>
-      <h1 className='text-7xl mb-2 text-gray-800' >1000.22</h1>
-      <h1 className='mb-2 text-gray-800' >Your balance of HPT</h1>
+      <h1 className='text-7xl mb-2 text-gray-800' >{balance}</h1>
+      <h1 className='mb-2 text-gray-800' >Your balance of HOL</h1>
     </>
   )
 }
