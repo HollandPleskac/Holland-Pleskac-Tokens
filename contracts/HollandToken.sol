@@ -8,6 +8,7 @@ import "hardhat/console.sol";
 
 contract HollandToken is ERC20, Ownable {
     mapping(address => uint) balances;
+    mapping(address => string[]) transfers;
 
     constructor() ERC20("Holland Token", "HOL") {
       balances[msg.sender] = 100;
