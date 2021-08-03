@@ -7,26 +7,55 @@ const decimals = ethers.BigNumber.from(10).pow(18)
 
 const HomePage = () => {
   const [account, setAccount] = useState(null)
+  const [connection, setConnection] = useState('')
+
+  const isMetaMaskInstalled = async () => {
+    // if they dont have metamask 'ethereum' doesnt exist, need to use 'window.ethereum'
+    if (window.ethereum && window.ethereum.isMetaMask)
+      return true
+    return false
+  }
+
+  const isMetaMaskConnected = async () => {
+    const accounts = await ethereum.request({ method: 'eth_accounts' })
+    if (accounts.length !== 0)
+      return true
+    return false
+  }
 
   useEffect(() => {
 
-    const requestAccount = async () => {
-      const accounts = await window.ethereum.request({ 'method': 'eth_requestAccounts' }) // prompt user to connect meta mask account if not connected (returs accounts array)
-      // console.log('accounts', accounts)
-      setAccount(accounts[0])
+    const setConnectionState = async () => {
+      if (!await isMetaMaskInstalled()) {
+        setConnection('NOT INSTALLED')
+        setAccount(null)
+        return
+      } else if (await isMetaMaskConnected()) {
+        const accounts = await ethereum.request({ method: 'eth_accounts' })
+        setConnection('CONNECTED')
+        setAccount(accounts[0])
+        return
+      } else {
+        setConnection('DISCONNECTED')
+        setAccount(null)
+        return
+      }
     }
 
-    requestAccount()
+    setConnectionState() // initial state
 
-    ethereum.on('accountsChanged', (accounts) => {
-      setAccount(accounts[0])
-    });
+    window.ethereum.on('accountsChanged', function (accounts) {
+      console.log('accounts changed', accounts)
+      setConnectionState()
+    })
   }, [])
 
   return (
     <div className='h-screen flex' >
       <div className='flex-1 flex flex-col justify-center items-center' >
+        <button onClick={() => { console.log('connection state', connection, 'account', account) }} >get state</button>
         <AddTokenBtn />
+        <MetaMaskBtn connection={connection} />
         <Balance account={account} />
         <SendForm account={account} />
       </div>
@@ -147,6 +176,27 @@ const Transaction = ({ amount, type, address }) => {
     </div >
   )
 }
+
+const MetaMaskBtn = ({ connection }) => {
+
+  const metaMaskBtnHandler = async () => {
+    if (connection === 'DISCONNECTED')
+      await window.ethereum.request({ method: "eth_requestAccounts" })
+    else if (connection === 'NOT INSTALLED')
+      router.push('https://chrome.google.com/webstore/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn')
+    else if (connection === 'CONNECTED')
+      console.log('Disconnect from MetaMask in the chrome extension')
+  }
+
+  return (
+    <button onClick={metaMaskBtnHandler} >
+      {connection === 'DISCONNECTED' && 'Connect to MetaMask'}
+      {connection === 'NOT INSTALLED' && 'Install MetaMask'}
+      {connection === 'CONNECTED' && 'Connected to MetaMask'}
+    </button>
+  )
+}
+
 
 const AddTokenBtn = () => {
 
