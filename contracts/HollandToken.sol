@@ -7,8 +7,16 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "hardhat/console.sol";
 
 contract HollandToken is ERC20, Ownable {
-    mapping(address => uint) balances;
-    mapping(address => string[]) transfers;
+
+  struct Transfer {
+    string transferType;
+    uint amount;
+    address from;
+    address to;
+  }
+
+    mapping(address => uint) public balances;
+    mapping(address => Transfer[]) public transferHistory; // address => incoming or outcoming
 
     constructor() ERC20("Holland Token", "HOL") {
       balances[msg.sender] = 100;
@@ -21,6 +29,15 @@ contract HollandToken is ERC20, Ownable {
 
     function burn(address from, uint256 amount) public onlyOwner {
       _burn(from, amount);
+    }
+
+    function _afterTokenTransfer(address from, address to, uint256 amount)
+        internal virtual override
+    {   
+        super._afterTokenTransfer(from, to, amount);
+        console.log('console logged after transfering the token!!');
+        // transferHistory[from]['incoming'].push(amount);
+        // transferHistory[to].push(amount);
     }
 
     
