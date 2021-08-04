@@ -8,7 +8,7 @@ import "hardhat/console.sol";
 
 contract HollandToken is ERC20, Ownable {
 
-  struct Transfer {
+  struct TokenTransfer {
     string transferType;
     uint amount;
     address from;
@@ -16,7 +16,7 @@ contract HollandToken is ERC20, Ownable {
   }
 
     mapping(address => uint) public balances;
-    mapping(address => Transfer[]) public transferHistory; // address => incoming or outcoming
+    mapping(address => TokenTransfer[]) public transferHistory; // address => incoming or outcoming
 
     constructor() ERC20("Holland Token", "HOL") {
       balances[msg.sender] = 100;
@@ -36,9 +36,12 @@ contract HollandToken is ERC20, Ownable {
     {   
         super._afterTokenTransfer(from, to, amount);
         console.log('console logged after transfering the token!!');
-        // transferHistory[from]['incoming'].push(amount);
-        // transferHistory[to].push(amount);
+        transferHistory[from].push(TokenTransfer('subtract',amount,from, to));
+        transferHistory[to].push(TokenTransfer('add',amount,from, to));
     }
 
-    
+    function getTransferHistory() public view returns(TokenTransfer[] memory) {
+        console.log('message.sender',msg.sender);
+        return transferHistory[msg.sender];
+    }
 }

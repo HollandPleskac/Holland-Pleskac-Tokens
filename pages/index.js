@@ -59,7 +59,7 @@ const HomePage = () => {
         <Balance account={account} />
         <SendForm account={account} />
       </div>
-      <TransactionHistory />
+      <TransactionHistory account={account} />
     </div>
   )
 }
@@ -151,10 +151,31 @@ const SendForm = ({ account }) => {
   )
 }
 
-const TransactionHistory = () => {
+const TransactionHistory = ({ account }) => {
+
+  console.log('account in tx history', account)
+
+  const getTransferHistory = async () => {
+    console.log('account when getting transfer', account)
+    if (typeof window.ethereum !== undefined && account !== null) {
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner()
+
+      console.log(signer)
+      const hollandToken = new ethers.Contract(hollandTokenAddress, HollandToken.abi, signer)
+      try {
+        const history = await hollandToken.getTransferHistory()
+        console.log('transaction history: ', history)
+      } catch (err) {
+        console.log('transaction history error: ', err)
+      }
+    }
+  }
+
   return (
     <div className='h-full w-1/4 p-8 flex flex-col items-center bg-green-400'>
       <h2 className='font-semibold text-lg mb-4' >Transaction History</h2>
+      <button onClick={getTransferHistory} >get Transfer history</button>
       <Transaction amount='20' type='+' address='0x28aF3' />
     </div>
   )
