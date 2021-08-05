@@ -20,7 +20,7 @@ const TopBar = () => {
     <div className='z-10 w-full flex items-center justify-between px-8 py-6 bg-white shadow-md ' >
       <div className='flex items-center' >
         <FontAwesomeIcon icon={faAdjust} className='mr-3 text-4xl text-blue-500 ' />
-        <h1 className='pt-px text-blue-500 text-lg font-bold' >HOL Token</h1>
+        <h1 className='text-blue-500 text-xl font-bold' >HOL Token</h1>
       </div>
       <div className='' >
         <AddTokenBtn />
@@ -63,29 +63,29 @@ const AddTokenBtn = () => {
 
   const addTokenHandler = async () => {
     console.log('adding token')
-    // try {
-    //   // wasAdded is a boolean. Like any RPC method, an error may be thrown.
-    //   const wasAdded = await window.ethereum.request({
-    //     method: 'wallet_watchAsset',
-    //     params: {
-    //       type: 'ERC20', // Initially only supports ERC20, but eventually more!
-    //       options: {
-    //         address: tokenAddress, // The address that the token is at.
-    //         symbol: tokenSymbol, // A ticker symbol or shorthand, up to 5 chars.
-    //         decimals: tokenDecimals, // The number of decimals in the token
-    //         image: tokenImage, // A string url of the token logo
-    //       },
-    //     },
-    //   });
+    try {
+      // wasAdded is a boolean. Like any RPC method, an error may be thrown.
+      const wasAdded = await window.ethereum.request({
+        method: 'wallet_watchAsset',
+        params: {
+          type: 'ERC20', // Initially only supports ERC20, but eventually more!
+          options: {
+            address: tokenAddress, // The address that the token is at.
+            symbol: tokenSymbol, // A ticker symbol or shorthand, up to 5 chars.
+            decimals: tokenDecimals, // The number of decimals in the token
+            image: tokenImage, // A string url of the token logo
+          },
+        },
+      });
 
-    //   if (wasAdded) {
-    //     console.log('Added the token!');
-    //   } else {
-    //     console.log('User chose not to add the token.');
-    //   }
-    // } catch (error) {
-    //   console.log('error', error);
-    // }
+      if (wasAdded) {
+        console.log('Added the token!');
+      } else {
+        console.log('User chose not to add the token.');
+      }
+    } catch (error) {
+      console.log('error', error);
+    }
   }
 
   return (
@@ -100,7 +100,7 @@ const AddTokenBtn = () => {
 
 const SideBar = () => {
   return (
-    <div className='z-20 w-3/12 bg-white shadow-lg' >
+    <div className='z-20 sm:w-4/12 md:w-3/12  bg-white shadow-lg' >
       <div className='w-full mb-5 bg-gray-200 overflow-y-scroll' style={{ height: 1.5 }} ></div>
       <Transaction amt={20} addr='0x9F...Bd14' type='subtract' />
       <Transaction amt={10} addr='0x9F...Bd14' type='add' />
@@ -134,11 +134,41 @@ const Transaction = ({ amt, addr, type }) => {
 const PageContent = () => {
   return (
     <div className='z-0 flex-grow flex flex-col justify-center items-center bg-background-gray' >
-      <InstallDirections text={`Click “Install MetaMask” in the${<br />} top right corner to get started!`} />
+      <h1 className='mb-2 text-7xl text-blue-500' >100000</h1>
+      <h2 className='mb-8 text-lg text-gray-600' >Your balance of HOL</h2>
+
+      <SendHOL />
+      {/* <InstallDirections text={`Click “Install MetaMask” in the${<br />} top right corner to get started!`} /> */}
       {/* <ConnectDirections text='Click “Connect to MetaMask” in the top right corner to interact with HOL Token!' /> */}
     </div>
   )
 }
+
+const SendHOL = () => {
+  return (
+    <>
+      <input
+        placeholder='address'
+        className='mb-4 px-4 py-2 border-2 border-gray-600 rounded-lg focus:outline-none focus:border-blue-600 transition ease-in duration-100'
+        style={{ width: 350, height: 45 }}
+      />
+      <div className='relative' >
+        <input
+          placeholder='amount'
+          className='px-4 py-2 border-2 border-black rounded-l-lg focus:outline-none focus:border-blue-600 transition ease-in duration-100'
+          style={{ width: 350, height: 45 }}
+        />
+        <button
+          className='absolute px-4 py-2 bg-blue-500 text-white rounded-r-lg border-2 border-blue-500 hover:bg-blue-600 hover:border-blue-600 focus:bg-blue-600 focus:border-blue-600 transition ease-in duration-100'
+          style={{ height: 45 }}
+        >
+          Send
+        </button>
+      </div>
+    </>
+  )
+}
+
 
 const InstallDirections = () => {
   return (
