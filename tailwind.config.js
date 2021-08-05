@@ -9,6 +9,11 @@ module.exports = {
       'serif': [...defaultTheme.fontFamily.serif],
       'mono': [...defaultTheme.fontFamily.mono]
     },
+    extend: {
+      colors: {
+        'background-gray': '#F6F6F6'
+      }
+    }
   },
   variants: {
     extend: {},
