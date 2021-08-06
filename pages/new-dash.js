@@ -3,7 +3,7 @@ import Image from 'next/image'
 import { ethers } from 'ethers'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faAdjust } from '@fortawesome/free-solid-svg-icons'
-import HollandToken from '../artifacts/contracts/HollandToken.sol/HollandToken.json'
+import HollandToken from './HollandToken.json'
 
 const hollandTokenAddress = '0x5FbDB2315678afecb367f032d93F642f64180aa3'
 const decimals = ethers.BigNumber.from(10).pow(18)
