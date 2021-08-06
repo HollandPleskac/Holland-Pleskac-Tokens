@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react'
-import Image from 'next/image'
+import axios from 'axios'
 import { ethers } from 'ethers'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faAdjust } from '@fortawesome/free-solid-svg-icons'
-import HollandToken from './HollandToken.json'
 
-const hollandTokenAddress = '0x5FbDB2315678afecb367f032d93F642f64180aa3'
 const decimals = ethers.BigNumber.from(10).pow(18)
+const url = 'http://localhost:3000/'
 
 const HomePage = () => {
 
   const [account, setAccount] = useState(null)
-  const [connection, setConnection] = useState('')
+  const [connection, setConnection] = useState(null)
+
+  const [HollandToken, setHollandToken] = useState(null)
+  const [hollandTokenAddress, setHollandTokenAddress] = useState(null)
 
   const isMetaMaskInstalled = async () => {
     // if they dont have metamask 'ethereum' doesnt exist, need to use 'window.ethereum'
@@ -28,6 +30,17 @@ const HomePage = () => {
   }
 
   useEffect(() => {
+
+    const setHollandTokenData = async () => {
+      try {
+        const hollandTokenContract = await axios.get(`${url}HollandToken.json`).then(res => res.data)  // axios.get returns an http response obj, res.data = HollandToken
+        const hollandTokenAddr = await axios.get(`${url}HollandTokenAddress.json`).then(res => res.data.address)
+        setHollandToken(hollandTokenContract)
+        setHollandTokenAddress(hollandTokenAddr)
+      } catch (e) {
+        console.log('err', e)
+      }
+    }
 
     const setConnectionState = async () => {
       if (!await isMetaMaskInstalled()) {
@@ -46,7 +59,9 @@ const HomePage = () => {
       }
     }
 
-    setConnectionState() // initial state
+    setHollandTokenData().then(() => {
+      setConnectionState() // initial state
+    })
 
     window.ethereum.on('accountsChanged', function (accounts) {
       console.log('accounts changed', accounts)
@@ -54,13 +69,12 @@ const HomePage = () => {
     })
   }, [])
 
-
   return (
     <div className='h-screen flex flex-col items-center ' >
       <TopBar connection={connection} />
       <div className='w-full flex flex-grow' >
-        <PageContent connection={connection} account={account} />
-        <TransactionHistory account={account} />
+        <PageContent HollandToken={HollandToken} hollandTokenAddress={hollandTokenAddress} connection={connection} account={account} />
+        <TransactionHistory HollandToken={HollandToken} hollandTokenAddress={hollandTokenAddress} account={account} />
       </div>
     </div>
   )
@@ -81,19 +95,22 @@ const TopBar = ({ connection }) => {
   )
 }
 
-const PageContent = ({ connection, account }) => {
+const PageContent = ({ HollandToken, hollandTokenAddress, connection, account }) => {
   return (
     <div className='z-0 flex-grow flex flex-col justify-center items-center bg-background-gray' >
-      <Balance account={account} />
-      <SendForm account={account} />
-      {/* <InstallDirections text={`Click “Install MetaMask” in the${<br />} top right corner to get started!`} /> */}
-      {/* <ConnectDirections text='Click “Connect to MetaMask” in the top right corner to interact with HOL Token!' /> */}
+      {connection === 'DISCONNECTED' && <ConnectDirections text='Click “Connect to MetaMask” in the top right corner to interact with HOL Token!' />}
+      {connection === 'NOT INSTALLED' && <InstallDirections text={`Click “Install MetaMask” in the${<br />} top right corner to get started!`} />}
+      {
+        connection === 'CONNECTED' && <>
+          <Balance HollandToken={HollandToken} hollandTokenAddress={hollandTokenAddress} account={account} />
+          <SendForm account={account} />
+        </>
+      }
     </div>
   )
 }
 
-const TransactionHistory = ({ account }) => {
-  console.log('account in tx history', account)
+const TransactionHistory = ({ HollandToken, hollandTokenAddress, account }) => {
 
   const getTransferHistory = async () => {
     console.log('account when getting transfer', account)
@@ -147,7 +164,7 @@ const Transaction = ({ amt, addr, type }) => {
   )
 }
 
-const Balance = ({ account }) => {
+const Balance = ({ HollandToken, hollandTokenAddress, account }) => {
   const [balance, setBalance] = useState('')
 
   useEffect(() => {
@@ -156,6 +173,7 @@ const Balance = ({ account }) => {
       if (typeof window.ethereum !== undefined && account !== null) {
         const provider = new ethers.providers.Web3Provider(window.ethereum);
         const hollandToken = new ethers.Contract(hollandTokenAddress, HollandToken.abi, provider)
+        console.log('token in balance', hollandToken, hollandTokenAddress, account)
         try {
           const bal = await hollandToken.balanceOf(account)
           console.log('balance: ', ethers.BigNumber.from(bal).div(decimals))
@@ -169,14 +187,14 @@ const Balance = ({ account }) => {
 
     const setData = async () => {
       console.log('account: ', account)
-      if (account !== null) {
+      if (HollandToken.abi && hollandTokenAddress !== null && account !== null) {
         const bal = await getBalance()
         setBalance(Math.round(bal * 100) / 100)
       }
     }
 
     setData()
-  }, [account])
+  }, [HollandToken.abi, hollandTokenAddress, account])
 
   return (
     <>
