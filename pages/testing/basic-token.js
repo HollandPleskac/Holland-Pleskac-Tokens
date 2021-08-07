@@ -1,5 +1,17 @@
 // Commented out - the Token import causes an error when deploying to vercel
 
+import React from 'react'
+
+const PagePlaceHolder = () => {
+  return (
+    <div>
+
+    </div>
+  )
+}
+
+export default PagePlaceHolder
+
 // // 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
 
 // import React, { useState } from 'react'
