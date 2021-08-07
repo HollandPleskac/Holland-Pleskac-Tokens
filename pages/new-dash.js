@@ -1,3 +1,5 @@
+// todo - manage the HollandToken and hollandTokenAddress states in react context to clean up the code
+
 import React, { useState, useEffect } from 'react'
 import axios from 'axios'
 import { ethers } from 'ethers'
@@ -187,10 +189,9 @@ const Balance = ({ HollandToken, hollandTokenAddress, account }) => {
 
     const setData = async () => {
       console.log('account: ', account)
-      if (HollandToken.abi && hollandTokenAddress !== null && account !== null) {
-        const bal = await getBalance()
-        setBalance(Math.round(bal * 100) / 100)
-      }
+      const bal = await getBalance()
+      setBalance(Math.round(bal * 100) / 100)
+
     }
 
     setData()
