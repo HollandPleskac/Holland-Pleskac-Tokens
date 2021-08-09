@@ -10,6 +10,7 @@ import { faAdjust } from '@fortawesome/free-solid-svg-icons'
 import HollandTokenContext from '../context/hollandTokenContext'
 
 const decimals = ethers.BigNumber.from(10).pow(18)
+const url = 'http://localhost:3000/'
 
 const HomePage = () => {
   const ctx = useContext(HollandTokenContext)
@@ -168,7 +169,6 @@ const Transaction = ({ amt, addr, type }) => {
 
   return (
     <div className='mx-10 mb-5 p-4 bg-background-gray rounded-lg' >
-      HARDCODED
       <h3 className={`mb-1 text-lg ${color}`} >{sign}{amt} HOL</h3>
       <h4 className='text-gray-500 text-sm' >{shortAddress}</h4>
     </div>
@@ -285,11 +285,13 @@ const MetaMaskBtn = ({ connection }) => {
 }
 
 const AddTokenBtn = () => {
+  const ctx = useContext(HollandTokenContext)
 
-  const tokenAddress = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
+
+  const tokenAddress = ctx.hollandTokenAddress;
   const tokenSymbol = 'HOL';
   const tokenDecimals = 18;
-  const tokenImage = 'http://localhost:3000/adjust-solid.svg';
+  const tokenImage = `${url}adjust-solid.svg`;
 
   const addTokenHandler = async () => {
     console.log('adding token')
