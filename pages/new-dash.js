@@ -1,21 +1,21 @@
 // todo - manage the HollandToken and hollandTokenAddress states in react context to clean up the code
-
-import React, { useState, useEffect } from 'react'
-import axios from 'axios'
+// hook up token transfers
+// hook up transactions history
+// Done!
+import React, { useState, useEffect, useContext } from 'react'
 import { ethers } from 'ethers'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faAdjust } from '@fortawesome/free-solid-svg-icons'
 
+import HollandTokenContext from '../context/hollandTokenContext'
+
 const decimals = ethers.BigNumber.from(10).pow(18)
-const url = 'http://localhost:3000/'
 
 const HomePage = () => {
+  const ctx = useContext(HollandTokenContext)
 
   const [account, setAccount] = useState(null)
   const [connection, setConnection] = useState(null)
-
-  const [HollandToken, setHollandToken] = useState(null)
-  const [hollandTokenAddress, setHollandTokenAddress] = useState(null)
 
   const isMetaMaskInstalled = async () => {
     // if they dont have metamask 'ethereum' doesnt exist, need to use 'window.ethereum'
@@ -32,51 +32,42 @@ const HomePage = () => {
   }
 
   useEffect(() => {
+    if (ctx.HollandToken) {
 
-    const setHollandTokenData = async () => {
-      try {
-        const hollandTokenContract = await axios.get(`${url}HollandToken.json`).then(res => res.data)  // axios.get returns an http response obj, res.data = HollandToken
-        const hollandTokenAddr = await axios.get(`${url}HollandTokenAddress.json`).then(res => res.data.address)
-        setHollandToken(hollandTokenContract)
-        setHollandTokenAddress(hollandTokenAddr)
-      } catch (e) {
-        console.log('err', e)
+      const setConnectionState = async () => {
+        if (!await isMetaMaskInstalled()) {
+          setConnection('NOT INSTALLED')
+          setAccount(null)
+          return
+        } else if (await isMetaMaskConnected()) {
+          const accounts = await ethereum.request({ method: 'eth_accounts' })
+          setConnection('CONNECTED')
+          setAccount(accounts[0])
+          return
+        } else {
+          setConnection('DISCONNECTED')
+          setAccount(null)
+          return
+        }
       }
-    }
 
-    const setConnectionState = async () => {
-      if (!await isMetaMaskInstalled()) {
-        setConnection('NOT INSTALLED')
-        setAccount(null)
-        return
-      } else if (await isMetaMaskConnected()) {
-        const accounts = await ethereum.request({ method: 'eth_accounts' })
-        setConnection('CONNECTED')
-        setAccount(accounts[0])
-        return
-      } else {
-        setConnection('DISCONNECTED')
-        setAccount(null)
-        return
-      }
-    }
-
-    setHollandTokenData().then(() => {
       setConnectionState() // initial state
-    })
 
-    window.ethereum.on('accountsChanged', function (accounts) {
-      console.log('accounts changed', accounts)
-      setConnectionState()
-    })
-  }, [])
+      window.ethereum.on('accountsChanged', function (accounts) {
+        console.log('accounts changed', accounts)
+        setConnectionState()
+      })
+    }
+
+
+  }, [ctx.HollandToken])
 
   return (
     <div className='h-screen flex flex-col items-center ' >
       <TopBar connection={connection} />
       <div className='w-full flex flex-grow' >
-        <PageContent HollandToken={HollandToken} hollandTokenAddress={hollandTokenAddress} connection={connection} account={account} />
-        <TransactionHistory HollandToken={HollandToken} hollandTokenAddress={hollandTokenAddress} account={account} />
+        <PageContent connection={connection} account={account} />
+        <TransactionHistory account={account} />
       </div>
     </div>
   )
@@ -97,14 +88,14 @@ const TopBar = ({ connection }) => {
   )
 }
 
-const PageContent = ({ HollandToken, hollandTokenAddress, connection, account }) => {
+const PageContent = ({ connection, account }) => {
   return (
     <div className='z-0 flex-grow flex flex-col justify-center items-center bg-background-gray' >
       {connection === 'DISCONNECTED' && <ConnectDirections text='Click “Connect to MetaMask” in the top right corner to interact with HOL Token!' />}
       {connection === 'NOT INSTALLED' && <InstallDirections text={`Click “Install MetaMask” in the${<br />} top right corner to get started!`} />}
       {
         connection === 'CONNECTED' && <>
-          <Balance HollandToken={HollandToken} hollandTokenAddress={hollandTokenAddress} account={account} />
+          <Balance account={account} />
           <SendForm account={account} />
         </>
       }
@@ -112,24 +103,33 @@ const PageContent = ({ HollandToken, hollandTokenAddress, connection, account })
   )
 }
 
-const TransactionHistory = ({ HollandToken, hollandTokenAddress, account }) => {
+const TransactionHistory = ({ account }) => {
+  const ctx = useContext(HollandTokenContext)
+  const [txHistory, setTxHistory] = useState([])
 
-  const getTransferHistory = async () => {
-    console.log('account when getting transfer', account)
-    if (typeof window.ethereum !== undefined && account !== null) {
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
-      const signer = provider.getSigner()
+  useEffect(() => {
+    const getTransferHistory = async () => {
+      console.log('account when getting transfer', account)
+      if (typeof window.ethereum !== undefined && account !== null) {
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const signer = provider.getSigner()
 
-      console.log(signer)
-      const hollandToken = new ethers.Contract(hollandTokenAddress, HollandToken.abi, signer)
-      try {
-        const history = await hollandToken.getTransferHistory()
-        console.log('transaction history: ', history)
-      } catch (err) {
-        console.log('transaction history error: ', err)
+        console.log(signer)
+        const hollandToken = new ethers.Contract(ctx.hollandTokenAddress, ctx.HollandToken.abi, signer)
+        try {
+          const history = await hollandToken.getTransferHistory()
+          setTxHistory(history)
+          console.log('transaction history: ', history)
+        } catch (err) {
+          console.log('transaction history error: ', err)
+        }
       }
     }
-  }
+
+    getTransferHistory()
+  }, [ctx.HollandToken, ctx.hollandTokenAddress, account])
+
+
 
   return (
     <div className='z-20 sm:w-4/12 md:w-3/12  overflow-y-scroll bg-white shadow-lg' >
@@ -144,17 +144,17 @@ const Transaction = ({ amt, addr, type }) => {
   if (addr === null)
     return <div></div>
 
-  const shortAddress = addr.slice(0, 4) + '...' + addr.slice((-4))
+  let shortAddress = addr.slice(0, 4) + '...' + addr.slice((-4))
   let color
   let sign
   if (type === 'subtract') {
     color = 'text-red-500'
     sign = '-'
-    'to '.concat(shortAddress)
+    shortAddress = 'to '.concat(shortAddress)
   } else {
     color = 'text-green-500'
     sign = '+'
-    'from '.concat(shortAddress)
+    shortAddress = 'from '.concat(shortAddress)
   }
 
   return (
@@ -166,36 +166,31 @@ const Transaction = ({ amt, addr, type }) => {
   )
 }
 
-const Balance = ({ HollandToken, hollandTokenAddress, account }) => {
+const Balance = ({ account }) => {
+  const ctx = useContext(HollandTokenContext)
+
   const [balance, setBalance] = useState('')
 
   useEffect(() => {
 
-    const getBalance = async () => {
+    const setBal = async () => {
       if (typeof window.ethereum !== undefined && account !== null) {
         const provider = new ethers.providers.Web3Provider(window.ethereum);
-        const hollandToken = new ethers.Contract(hollandTokenAddress, HollandToken.abi, provider)
-        console.log('token in balance', hollandToken, hollandTokenAddress, account)
+        const hollandToken = new ethers.Contract(ctx.hollandTokenAddress, ctx.HollandToken.abi, provider)
+        console.log('token in balance', hollandToken, ctx.hollandTokenAddress, account)
         try {
           const bal = await hollandToken.balanceOf(account)
           console.log('balance: ', ethers.BigNumber.from(bal).div(decimals))
-          return ethers.BigNumber.from(bal).div(decimals)
+          setBalance(ethers.BigNumber.from(bal).div(decimals).toNumber())
         } catch (err) {
           console.log('error: ', err)
-          return 'error'
+          setBalance('error')
         }
       }
     }
 
-    const setData = async () => {
-      console.log('account: ', account)
-      const bal = await getBalance()
-      setBalance(Math.round(bal * 100) / 100)
-
-    }
-
-    setData()
-  }, [HollandToken.abi, hollandTokenAddress, account])
+    setBal()
+  }, [ctx.HollandToken.abi, ctx.hollandTokenAddress, account])
 
   return (
     <>
@@ -206,20 +201,46 @@ const Balance = ({ HollandToken, hollandTokenAddress, account }) => {
 }
 
 const SendForm = ({ account }) => {
+  const ctx = useContext(HollandTokenContext)
+
+  const [address, setAddress] = useState('')
+  const [amount, setAmount] = useState('')
+
+  const sendTokens = async () => {
+    if (typeof window.ethereum !== undefined && account !== null) {
+      console.log('address:', address, 'amount:', amount)
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner()
+      const hollandToken = new ethers.Contract(ctx.hollandTokenAddress, ctx.HollandToken.abi, signer)
+      try {
+        console.log('entered value * decimals', ethers.BigNumber.from(amount).mul(decimals))
+        await hollandToken.transfer(address, ethers.BigNumber.from(amount).mul(decimals))
+      } catch (err) {
+        console.log('error: ', err)
+      }
+    }
+  }
+
+
   return (
     <>
       <input
+        value={address}
+        onChange={(e) => { setAddress(e.target.value) }}
         placeholder='address'
         className='mb-4 px-4 py-2 border-2 rounded-lg border-gray-400 hover:border-blue-500 focus:outline-none focus:border-blue-600 transition ease-in duration-100'
         style={{ width: 350, height: 45 }}
       />
       <div className='relative' >
         <input
+          value={amount}
+          onChange={(e) => { setAmount(e.target.value) }}
           placeholder='amount'
           className='px-4 py-2 border-2 rounded-l-lg border-gray-400 hover:border-blue-500 focus:outline-none focus:border-blue-600 transition ease-in duration-100'
           style={{ width: 350, height: 45 }}
         />
         <button
+          onClick={sendTokens}
           className='absolute px-4 py-2 bg-blue-500 text-white rounded-r-lg border-2 border-blue-500 hover:bg-blue-600 hover:border-blue-600 focus:bg-blue-600 focus:border-blue-600 transition ease-in duration-100'
           style={{ height: 45 }}
         >
