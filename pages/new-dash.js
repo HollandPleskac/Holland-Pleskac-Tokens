@@ -134,8 +134,17 @@ const TransactionHistory = ({ account }) => {
   return (
     <div className='z-20 sm:w-4/12 md:w-3/12  overflow-y-scroll bg-white shadow-lg' >
       <div className='w-full mb-6 bg-gray-200' style={{ height: 1.5 }} ></div>
-      <Transaction amt={20} addr={account} type='subtract' />
-      <Transaction amt={10} addr={account} type='add' />
+      {
+        txHistory.map((tx, index) => {
+          console.log('tx', tx)
+          if (tx.transferType === 'add')
+            return <Transaction key={index} amt={tx.amount.div(decimals).toNumber()} addr={tx.from} type={tx.transferType} />
+          else
+            return <Transaction key={index} amt={tx.amount.div(decimals).toNumber()} addr={tx.to} type={tx.transferType} />
+        })
+      }
+      {/* <Transaction amt={20} addr={account} type='subtract' />
+      <Transaction amt={10} addr={account} type='add' /> */}
     </div>
   )
 }
@@ -147,14 +156,14 @@ const Transaction = ({ amt, addr, type }) => {
   let shortAddress = addr.slice(0, 4) + '...' + addr.slice((-4))
   let color
   let sign
-  if (type === 'subtract') {
-    color = 'text-red-500'
-    sign = '-'
-    shortAddress = 'to '.concat(shortAddress)
-  } else {
+  if (type === 'add') {
     color = 'text-green-500'
     sign = '+'
     shortAddress = 'from '.concat(shortAddress)
+  } else {
+    color = 'text-red-500'
+    sign = '-'
+    shortAddress = 'to '.concat(shortAddress)
   }
 
   return (
