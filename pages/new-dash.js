@@ -11,7 +11,7 @@ import HollandTokenContext from '../context/hollandTokenContext'
 
 const decimals = ethers.BigNumber.from(10).pow(18)
 // const url = 'http://localhost:3000/'
-const url = 'https://holland-tokens-kymlnzjws-hollandpleskac.vercel.app/'
+const url = 'https://holland-tokens.vercel.app/'
 
 const HomePage = () => {
   const ctx = useContext(HollandTokenContext)
